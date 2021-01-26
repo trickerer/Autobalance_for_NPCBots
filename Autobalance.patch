@@ -1,7 +1,7 @@
-From 1013bc009cf2a5bfbd5aaa7f0cec85e2b747619f Mon Sep 17 00:00:00 2001
+From 5665d16d08043285b828e2a9af6d7688bbb0636f Mon Sep 17 00:00:00 2001
 From: trickerer <onlysuffering@gmail.com>
-Date: Tue, 29 Dec 2020 17:53:00 +0700
-Subject: [PATCH] Autobalance2021
+Date: Tue, 26 Jan 2021 16:36:22 +0700
+Subject: [PATCH] Autobalance
 
 ---
  src/server/game/Entities/Creature/AutoBalance.cpp | 1148 +++++++++++++++++++++
@@ -1205,7 +1205,7 @@ index 0000000..b4106f5
 +
 +#endif
 diff --git a/src/server/game/Entities/Creature/Creature.cpp b/src/server/game/Entities/Creature/Creature.cpp
-index 3498302..d95ae0a 100644
+index eac1f31..2857aa2 100644
 --- a/src/server/game/Entities/Creature/Creature.cpp
 +++ b/src/server/game/Entities/Creature/Creature.cpp
 @@ -859,6 +859,8 @@ void Creature::Update(uint32 diff)
@@ -1218,7 +1218,7 @@ index 3498302..d95ae0a 100644
  
  void Creature::Regenerate(Powers power)
 diff --git a/src/server/game/Entities/Creature/Creature.h b/src/server/game/Entities/Creature/Creature.h
-index b39ed00..88d75be 100644
+index 9088184..ab065c7 100644
 --- a/src/server/game/Entities/Creature/Creature.h
 +++ b/src/server/game/Entities/Creature/Creature.h
 @@ -27,6 +27,8 @@
@@ -1230,7 +1230,7 @@ index b39ed00..88d75be 100644
  class CreatureAI;
  class CreatureGroup;
  class Group;
-@@ -319,6 +321,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
+@@ -320,6 +322,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
          void ResetPlayerDamageReq() { m_PlayerDamageReq = GetHealth() / 2; }
          uint32 m_PlayerDamageReq;
  
@@ -1296,10 +1296,10 @@ index 0000000..9623405
 +
 +#endif
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index cced184..65506fb 100644
+index 0d5ff0e..0cfe8c5 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
-@@ -6374,6 +6374,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
+@@ -6378,6 +6378,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
  
  int32 Unit::HealBySpell(HealInfo& healInfo, bool critical /*= false*/)
  {
@@ -1311,7 +1311,7 @@ index cced184..65506fb 100644
      Unit::CalcHealAbsorb(healInfo);
      Unit::DealHeal(healInfo);
 diff --git a/src/server/game/Entities/Unit/Unit.h b/src/server/game/Entities/Unit/Unit.h
-index 854b40e..e84ae50 100644
+index bcafefc..75edc40 100644
 --- a/src/server/game/Entities/Unit/Unit.h
 +++ b/src/server/game/Entities/Unit/Unit.h
 @@ -460,6 +460,8 @@ class TC_GAME_API HealInfo
@@ -1324,7 +1324,7 @@ index 854b40e..e84ae50 100644
  
  class TC_GAME_API ProcEventInfo
 diff --git a/src/server/game/Maps/Map.h b/src/server/game/Maps/Map.h
-index 032ed6c..32cbd84 100644
+index 81b2299..50355eb 100644
 --- a/src/server/game/Maps/Map.h
 +++ b/src/server/game/Maps/Map.h
 @@ -18,6 +18,8 @@
@@ -1427,10 +1427,10 @@ index 8019735..638a6e9 100644
 +template class TC_GAME_API ScriptRegistry<AllMapScript>;
 +template class TC_GAME_API ScriptRegistry<AllCreatureScript>;
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index 3069fcc..87203e4 100644
+index 3485c3a..dba2359 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
-@@ -308,6 +308,21 @@ class TC_GAME_API FormulaScript : public ScriptObject
+@@ -307,6 +307,21 @@ class TC_GAME_API FormulaScript : public ScriptObject
          virtual void OnGroupRateCalculation(float& /*rate*/, uint32 /*count*/, bool /*isRaid*/) { }
  };
  
@@ -1452,7 +1452,7 @@ index 3069fcc..87203e4 100644
  template<class TMap> class MapScript : public UpdatableScript<TMap>
  {
      MapEntry const* _mapEntry;
-@@ -398,6 +413,9 @@ class TC_GAME_API UnitScript : public ScriptObject
+@@ -397,6 +412,9 @@ class TC_GAME_API UnitScript : public ScriptObject
          UnitScript(char const* name);
  
      public:
@@ -1462,7 +1462,7 @@ index 3069fcc..87203e4 100644
          // Called when a unit deals healing to another unit
          virtual void OnHeal(Unit* /*healer*/, Unit* /*reciever*/, uint32& /*gain*/) { }
  
-@@ -431,6 +449,16 @@ class TC_GAME_API CreatureScript : public ScriptObject
+@@ -430,6 +448,16 @@ class TC_GAME_API CreatureScript : public ScriptObject
          virtual CreatureAI* GetAI(Creature* /*creature*/) const = 0;
  };
  
@@ -1479,7 +1479,7 @@ index 3069fcc..87203e4 100644
  class TC_GAME_API GameObjectScript : public ScriptObject
  {
      protected:
-@@ -943,6 +971,10 @@ class TC_GAME_API ScriptMgr
+@@ -942,6 +970,10 @@ class TC_GAME_API ScriptMgr
          bool OnItemRemove(Player* player, Item* item);
          bool OnCastItemCombatSpell(Player* player, Unit* victim, SpellInfo const* spellInfo, Item* item);
  
@@ -1490,7 +1490,7 @@ index 3069fcc..87203e4 100644
      public: /* CreatureScript */
  
          CreatureAI* GetCreatureAI(Creature* creature);
-@@ -1082,6 +1114,7 @@ class TC_GAME_API ScriptMgr
+@@ -1081,6 +1113,7 @@ class TC_GAME_API ScriptMgr
  
      public: /* UnitScript */
  
@@ -1499,7 +1499,7 @@ index 3069fcc..87203e4 100644
          void OnDamage(Unit* attacker, Unit* victim, uint32& damage);
          void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage);
 diff --git a/src/server/game/World/World.cpp b/src/server/game/World/World.cpp
-index 15b2e89..a59f10b 100644
+index 5e07e6b..36a1f65 100644
 --- a/src/server/game/World/World.cpp
 +++ b/src/server/game/World/World.cpp
 @@ -26,6 +26,7 @@
@@ -1510,7 +1510,7 @@ index 15b2e89..a59f10b 100644
  #include "BattlefieldMgr.h"
  #include "BattlegroundMgr.h"
  #include "CalendarMgr.h"
-@@ -2055,6 +2056,10 @@ void World::SetInitialWorldSettings()
+@@ -2074,6 +2075,10 @@ void World::SetInitialWorldSettings()
  
      TC_LOG_INFO("server.loading", "Initializing Scripts...");
      sScriptMgr->Initialize();
@@ -1522,10 +1522,10 @@ index 15b2e89..a59f10b 100644
  
      TC_LOG_INFO("server.loading", "Validating spell scripts...");
 diff --git a/src/server/worldserver/worldserver.conf.dist b/src/server/worldserver/worldserver.conf.dist
-index b364635..a198084 100644
+index 6a51d91..5a2f3a2 100644
 --- a/src/server/worldserver/worldserver.conf.dist
 +++ b/src/server/worldserver/worldserver.conf.dist
-@@ -4084,3 +4084,196 @@ Metric.OverallStatusInterval = 1
+@@ -4089,3 +4089,196 @@ Metric.OverallStatusInterval = 1
  
  #
  ###################################################################################################
