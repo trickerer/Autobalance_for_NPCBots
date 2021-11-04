@@ -1,21 +1,15 @@
-From 50a22bc83b28bd3c67a97a748b0869b3cafae203 Mon Sep 17 00:00:00 2001
-From: trickerer <onlysuffering@gmail.com>
-Date: Mon, 19 Jul 2021 17:42:36 +0700
-Subject: [PATCH] AutoBalance
-
----
- .../game/Entities/Creature/AutoBalance.cpp    | 1148 +++++++++++++++++
- .../game/Entities/Creature/AutoBalance.h      |   23 +
- .../game/Entities/Creature/Creature.cpp       |    2 +
- src/server/game/Entities/Creature/Creature.h  |    4 +
- .../game/Entities/Creature/CustomData.h       |   50 +
- src/server/game/Entities/Unit/Unit.cpp        |    4 +
- src/server/game/Entities/Unit/Unit.h          |    2 +
- src/server/game/Maps/Map.h                    |    4 +
- src/server/game/Scripting/ScriptMgr.cpp       |   38 +
- src/server/game/Scripting/ScriptMgr.h         |   33 +
- src/server/game/World/World.cpp               |    5 +
- src/server/worldserver/worldserver.conf.dist  |  193 +++
+ src/server/game/Entities/Creature/AutoBalance.cpp | 1148 +++++++++++++++++++++
+ src/server/game/Entities/Creature/AutoBalance.h   |   23 +
+ src/server/game/Entities/Creature/Creature.cpp    |    2 +
+ src/server/game/Entities/Creature/Creature.h      |    4 +
+ src/server/game/Entities/Creature/CustomData.h    |   50 +
+ src/server/game/Entities/Unit/Unit.cpp            |    4 +
+ src/server/game/Entities/Unit/Unit.h              |    2 +
+ src/server/game/Maps/Map.h                        |    4 +
+ src/server/game/Scripting/ScriptMgr.cpp           |   38 +
+ src/server/game/Scripting/ScriptMgr.h             |   33 +
+ src/server/game/World/World.cpp                   |    5 +
+ src/server/worldserver/worldserver.conf.dist      |  193 ++++
  12 files changed, 1506 insertions(+)
  create mode 100644 src/server/game/Entities/Creature/AutoBalance.cpp
  create mode 100644 src/server/game/Entities/Creature/AutoBalance.h
@@ -23,7 +17,7 @@ Subject: [PATCH] AutoBalance
 
 diff --git a/src/server/game/Entities/Creature/AutoBalance.cpp b/src/server/game/Entities/Creature/AutoBalance.cpp
 new file mode 100644
-index 00000000..75430ab0
+index 00000000..43828583
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/AutoBalance.cpp
 @@ -0,0 +1,1148 @@
@@ -319,7 +313,7 @@ index 00000000..75430ab0
 +        if (!Is_AB_enabled)
 +            return;
 +
-+        if (!source || source->GetTypeId() != TYPEID_UNIT || !source->IsInWorld() || source->IsControlledByPlayer())
++        if (!source || !value || source->GetTypeId() != TYPEID_UNIT || !source->IsInWorld() || source->IsControlledByPlayer())
 +            return;
 +
 +        if (DungeonsOnly && !source->GetMap()->Instanceable())
@@ -329,7 +323,7 @@ index 00000000..75430ab0
 +        if (damageMultiplier == 1.0f)
 +            return;
 +
-+        value *= damageMultiplier;
++        value = std::max<uint32>(value * damageMultiplier, 1);
 +    }
 +};
 +
@@ -490,7 +484,7 @@ index 00000000..75430ab0
 +
 +    void OnPlayerEnterAll(Map* map, Player* player) override
 +    {
-+        recalcTimers[map->GetId()] = PLAYERS_COUNT_RECALC_TIMER;
++        recalcTimers[map->GetId()] = 0;
 +
 +        if (player->IsGameMaster())
 +            return;
@@ -520,7 +514,7 @@ index 00000000..75430ab0
 +
 +    void OnPlayerLeaveAll(Map* map, Player* player) override
 +    {
-+        recalcTimers[map->GetId()] = PLAYERS_COUNT_RECALC_TIMER;
++        recalcTimers[map->GetId()] = 0;
 +
 +        if (player->IsGameMaster())
 +            return;
@@ -889,7 +883,7 @@ index 00000000..75430ab0
 +        // GetPlayerClassList(creature, playerClassList);
 +
 +        float manaStatsRate = 1.0f;
-+        if (!useDefStats && LevelScaling && !skipLevel)
++        if (!useDefStats && baseMana > 0 && LevelScaling && !skipLevel)
 +        {
 +            float newMana = creatureStats->GenerateMana(creatureTemplate);
 +            manaStatsRate = newMana / float(baseMana);
@@ -1205,7 +1199,7 @@ index 00000000..b4106f5e
 +
 +#endif
 diff --git a/src/server/game/Entities/Creature/Creature.cpp b/src/server/game/Entities/Creature/Creature.cpp
-index 69222b13..e0ec8e13 100644
+index 93434359..6767a8f9 100644
 --- a/src/server/game/Entities/Creature/Creature.cpp
 +++ b/src/server/game/Entities/Creature/Creature.cpp
 @@ -863,6 +863,8 @@ void Creature::Update(uint32 diff)
@@ -1218,7 +1212,7 @@ index 69222b13..e0ec8e13 100644
  
  void Creature::Regenerate(Powers power)
 diff --git a/src/server/game/Entities/Creature/Creature.h b/src/server/game/Entities/Creature/Creature.h
-index b64e09ec..49d1ea13 100644
+index 73ed5371..0c57910f 100644
 --- a/src/server/game/Entities/Creature/Creature.h
 +++ b/src/server/game/Entities/Creature/Creature.h
 @@ -28,6 +28,8 @@
@@ -1241,7 +1235,7 @@ index b64e09ec..49d1ea13 100644
  
 diff --git a/src/server/game/Entities/Creature/CustomData.h b/src/server/game/Entities/Creature/CustomData.h
 new file mode 100644
-index 00000000..9623405e
+index 00000000..70ec8aee
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/CustomData.h
 @@ -0,0 +1,50 @@
@@ -1267,39 +1261,39 @@ index 00000000..9623405e
 +
 +struct CreatureCustomData
 +{
-+    explicit CreatureCustomData(uint32 count = 0, float dmg = 0.f, float hpRate = 0.f, float manaRate = 0.f, float armorRate = 0.f, uint8 selLevel = 0) :
-+            instancePlayerCount(count), selectedLevel(selLevel), damageMultiplier(dmg), healthMultiplier(hpRate), manaMultiplier(manaRate),
-+            armorMultiplier(armorRate) {}
++    uint32 instancePlayerCount = 0;
++    uint8 selectedLevel = 0;
++    uint32 entry = 0;
++    float damageMultiplier = 1.0f;
++    float healthMultiplier = 1.0f;
++    float manaMultiplier = 1.0f;
++    float armorMultiplier = 1.0f;
 +
-+    uint32 instancePlayerCount;
-+    uint8 selectedLevel;
-+    uint32 entry;
-+    float damageMultiplier;
-+    float healthMultiplier;
-+    float manaMultiplier;
-+    float armorMultiplier;
-+
-+private:
-+    CreatureCustomData(CreatureCustomData const&);
++    CreatureCustomData() = default;
++    CreatureCustomData(CreatureCustomData const&) = delete;
++    CreatureCustomData(CreatureCustomData&&) = delete;
++    CreatureCustomData& operator=(CreatureCustomData const&) = delete;
++    CreatureCustomData& operator=(CreatureCustomData&&) = delete;
 +};
 +
 +struct MapCustomData
 +{
-+    explicit MapCustomData(uint32 count = 0, uint8 selLevel = 0) : playerCount(count), mapLevel(selLevel) {}
++    uint32 playerCount = 0;
++    uint8 mapLevel = 0;
 +
-+    uint32 playerCount;
-+    uint8 mapLevel;
-+
-+private:
-+    MapCustomData(MapCustomData const&);
++    MapCustomData() = default;
++    MapCustomData(MapCustomData const&) = delete;
++    MapCustomData(MapCustomData&&) = delete;
++    MapCustomData& operator=(MapCustomData const&) = delete;
++    MapCustomData& operator=(MapCustomData&&) = delete;
 +};
 +
 +#endif
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 5f486aa9..6338a70a 100644
+index d1076960..d49a2f36 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
-@@ -6400,6 +6400,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
+@@ -6438,6 +6438,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
  
  int32 Unit::HealBySpell(HealInfo& healInfo, bool critical /*= false*/)
  {
@@ -1311,10 +1305,10 @@ index 5f486aa9..6338a70a 100644
      Unit::CalcHealAbsorb(healInfo);
      Unit::DealHeal(healInfo);
 diff --git a/src/server/game/Entities/Unit/Unit.h b/src/server/game/Entities/Unit/Unit.h
-index 16a8bea8..85eae005 100644
+index ea63c22e..56842018 100644
 --- a/src/server/game/Entities/Unit/Unit.h
 +++ b/src/server/game/Entities/Unit/Unit.h
-@@ -493,6 +493,8 @@ class TC_GAME_API HealInfo
+@@ -494,6 +494,8 @@ class TC_GAME_API HealInfo
          SpellSchoolMask GetSchoolMask() const { return _schoolMask; };
  
          uint32 GetHitMask() const;
@@ -1346,7 +1340,7 @@ index c926a00f..9125f472 100644
          PlayerList const& GetPlayers() const { return m_mapRefManager; }
  
 diff --git a/src/server/game/Scripting/ScriptMgr.cpp b/src/server/game/Scripting/ScriptMgr.cpp
-index 80197359..638a6e99 100644
+index be8494df..43a43e24 100644
 --- a/src/server/game/Scripting/ScriptMgr.cpp
 +++ b/src/server/game/Scripting/ScriptMgr.cpp
 @@ -1466,6 +1466,8 @@ void ScriptMgr::OnPlayerEnterMap(Map* map, Player* player)
@@ -1388,8 +1382,8 @@ index 80197359..638a6e99 100644
  void ScriptMgr::OnHeal(Unit* healer, Unit* reciever, uint32& gain)
  {
      FOREACH_SCRIPT(UnitScript)->OnHeal(healer, reciever, gain);
-@@ -2129,6 +2140,31 @@ void ScriptMgr::ModifyVehiclePassengerExitPos(Unit* passenger, Vehicle* vehicle,
-     FOREACH_SCRIPT(CreatureScript)->ModifyVehiclePassengerExitPos(passenger, vehicle, pos);
+@@ -2123,6 +2134,31 @@ void ScriptMgr::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& dama
+     FOREACH_SCRIPT(UnitScript)->ModifySpellDamageTaken(target, attacker, damage);
  }
  
 +AllMapScript::AllMapScript(const char *name)
@@ -1420,14 +1414,14 @@ index 80197359..638a6e99 100644
  SpellScriptLoader::SpellScriptLoader(char const* name)
      : ScriptObject(name)
  {
-@@ -2352,3 +2388,5 @@ template class TC_GAME_API ScriptRegistry<GuildScript>;
+@@ -2346,3 +2382,5 @@ template class TC_GAME_API ScriptRegistry<GuildScript>;
  template class TC_GAME_API ScriptRegistry<GroupScript>;
  template class TC_GAME_API ScriptRegistry<UnitScript>;
  template class TC_GAME_API ScriptRegistry<AccountScript>;
 +template class TC_GAME_API ScriptRegistry<AllMapScript>;
 +template class TC_GAME_API ScriptRegistry<AllCreatureScript>;
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index 3485c3aa..dba2359c 100644
+index b0f641b8..4a0599ae 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
 @@ -307,6 +307,21 @@ class TC_GAME_API FormulaScript : public ScriptObject
@@ -1462,7 +1456,7 @@ index 3485c3aa..dba2359c 100644
          // Called when a unit deals healing to another unit
          virtual void OnHeal(Unit* /*healer*/, Unit* /*reciever*/, uint32& /*gain*/) { }
  
-@@ -430,6 +448,16 @@ class TC_GAME_API CreatureScript : public ScriptObject
+@@ -424,6 +442,16 @@ class TC_GAME_API CreatureScript : public ScriptObject
          virtual CreatureAI* GetAI(Creature* /*creature*/) const = 0;
  };
  
@@ -1479,7 +1473,7 @@ index 3485c3aa..dba2359c 100644
  class TC_GAME_API GameObjectScript : public ScriptObject
  {
      protected:
-@@ -942,6 +970,10 @@ class TC_GAME_API ScriptMgr
+@@ -936,6 +964,10 @@ class TC_GAME_API ScriptMgr
          bool OnItemRemove(Player* player, Item* item);
          bool OnCastItemCombatSpell(Player* player, Unit* victim, SpellInfo const* spellInfo, Item* item);
  
@@ -1490,7 +1484,7 @@ index 3485c3aa..dba2359c 100644
      public: /* CreatureScript */
  
          CreatureAI* GetCreatureAI(Creature* creature);
-@@ -1081,6 +1113,7 @@ class TC_GAME_API ScriptMgr
+@@ -1075,6 +1107,7 @@ class TC_GAME_API ScriptMgr
  
      public: /* UnitScript */
  
@@ -1499,7 +1493,7 @@ index 3485c3aa..dba2359c 100644
          void OnDamage(Unit* attacker, Unit* victim, uint32& damage);
          void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage);
 diff --git a/src/server/game/World/World.cpp b/src/server/game/World/World.cpp
-index e1278d42..86a117da 100644
+index 0c6b5cff..694223d9 100644
 --- a/src/server/game/World/World.cpp
 +++ b/src/server/game/World/World.cpp
 @@ -26,6 +26,7 @@
@@ -1510,7 +1504,7 @@ index e1278d42..86a117da 100644
  #include "BattlefieldMgr.h"
  #include "BattlegroundMgr.h"
  #include "CalendarMgr.h"
-@@ -2075,6 +2076,10 @@ void World::SetInitialWorldSettings()
+@@ -2078,6 +2079,10 @@ void World::SetInitialWorldSettings()
  
      TC_LOG_INFO("server.loading", "Initializing Scripts...");
      sScriptMgr->Initialize();
@@ -1522,10 +1516,10 @@ index e1278d42..86a117da 100644
  
      TC_LOG_INFO("server.loading", "Validating spell scripts...");
 diff --git a/src/server/worldserver/worldserver.conf.dist b/src/server/worldserver/worldserver.conf.dist
-index d9f145a7..4718cb62 100644
+index 2f11d3e7..c306fe51 100644
 --- a/src/server/worldserver/worldserver.conf.dist
 +++ b/src/server/worldserver/worldserver.conf.dist
-@@ -4108,3 +4108,196 @@ Metric.OverallStatusInterval = 1
+@@ -4125,3 +4125,196 @@ Metric.OverallStatusInterval = 1
  
  #
  ###################################################################################################
@@ -1722,6 +1716,3 @@ index d9f145a7..4718cb62 100644
 +
 +#
 +###################################################################################################
--- 
-2.30.1.windows.1
-
