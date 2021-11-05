@@ -17,7 +17,7 @@
 
 diff --git a/src/server/game/Entities/Creature/AutoBalance.cpp b/src/server/game/Entities/Creature/AutoBalance.cpp
 new file mode 100644
-index 00000000..43828583
+index 00000000..f908c016
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/AutoBalance.cpp
 @@ -0,0 +1,1148 @@
@@ -320,7 +320,7 @@ index 00000000..43828583
 +            return;
 +
 +        float damageMultiplier = source->ToCreature()->CustomData.damageMultiplier;
-+        if (damageMultiplier == 1.0f)
++        if (damageMultiplier >= 1.0f)
 +            return;
 +
 +        value = std::max<uint32>(value * damageMultiplier, 1);
@@ -833,7 +833,7 @@ index 00000000..43828583
 +            TC_LOG_ERROR("scripts", "AB: hpmult: %.3f origlvl %u areaminlvl %u areamaxlvl %u",
 +            creatureABInfo->healthMultiplier, originalLevel, areaMinLvl, areaMaxLvl);
 +
-+        if (creatureABInfo->healthMultiplier <= MinHPModifier)
++        if (creatureABInfo->healthMultiplier < MinHPModifier)
 +            creatureABInfo->healthMultiplier = MinHPModifier;
 +
 +        float hpStatsRate = 1.0f;
@@ -890,13 +890,13 @@ index 00000000..43828583
 +        }
 +
 +        creatureABInfo->manaMultiplier = manaStatsRate * ManaMultiplier * defaultMultiplier * GlobalRate;
-+        if (creatureABInfo->manaMultiplier <= MinManaModifier)
++        if (creatureABInfo->manaMultiplier < MinManaModifier)
 +            creatureABInfo->manaMultiplier = MinManaModifier;
 +
 +        scaledMana = baseMana * creatureABInfo->manaMultiplier + 0.5f;
 +        float damageMul = defaultMultiplier * GlobalRate * DamageMultiplier;
 +        // Can not be less then Min_D_Mod
-+        if (damageMul <= MinDamageModifier)
++        if (damageMul < MinDamageModifier)
 +            damageMul = MinDamageModifier;
 +
 +        if (!useDefStats && LevelScaling && !skipLevel)
