@@ -17,7 +17,7 @@
 
 diff --git a/src/server/game/Entities/Creature/AutoBalance.cpp b/src/server/game/Entities/Creature/AutoBalance.cpp
 new file mode 100644
-index 00000000..5f615993
+index 00000000..62896930
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/AutoBalance.cpp
 @@ -0,0 +1,1145 @@
@@ -856,7 +856,7 @@ index 00000000..5f615993
 +        if (creatureABInfo->healthMultiplier < MinHPModifier)
 +            creatureABInfo->healthMultiplier = MinHPModifier;
 +
-+        float hpStatsRate = 1.0f * GetCreatureHealthMod(creatureTemplate->rank);
++        float hpStatsRate = GetCreatureHealthMod(creatureTemplate->rank);
 +        if (!useDefStats && LevelScaling && !skipLevel)
 +        {
 +            float newBaseHealth = 0.f;
@@ -885,7 +885,7 @@ index 00000000..5f615993
 +                if (reduction > 0 && reduction < newHealth)
 +                    newHealth -= reduction;
 +            }
-+            hpStatsRate = newHealth / float(baseHealth);
++            hpStatsRate *= newHealth / float(baseHealth);
 +        }
 +
 +        if (creature->GetGUIDLow() == DEBUG_CREATURE)
@@ -1196,7 +1196,7 @@ index 00000000..b4106f5e
 +
 +#endif
 diff --git a/src/server/game/Entities/Creature/Creature.cpp b/src/server/game/Entities/Creature/Creature.cpp
-index f9b94213..43931cc5 100644
+index bfc617a5..6ae5d328 100644
 --- a/src/server/game/Entities/Creature/Creature.cpp
 +++ b/src/server/game/Entities/Creature/Creature.cpp
 @@ -927,6 +927,8 @@ void Creature::Update(uint32 diff)
@@ -1287,7 +1287,7 @@ index 00000000..70ec8aee
 +
 +#endif
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index e6d257f5..bb249166 100644
+index 9a5ded71..831311eb 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
 @@ -6632,6 +6632,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
