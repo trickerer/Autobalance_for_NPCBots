@@ -17,7 +17,7 @@
 
 diff --git a/src/server/game/Entities/Creature/AutoBalance.cpp b/src/server/game/Entities/Creature/AutoBalance.cpp
 new file mode 100644
-index 00000000..62896930
+index 00000000..2aedf294
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/AutoBalance.cpp
 @@ -0,0 +1,1145 @@
@@ -611,7 +611,7 @@ index 00000000..62896930
 +                                {
 +                                    ChatHandler(player->GetSession()).PSendSysMessage(
 +                                        "|cffFF0000[AutoBalance]|r|cffff8000 Number of players has changed in %s. New player count: %u (Player Difficulty Offset = %u)|r",
-+                                        GetAreaEntryById(zoneId)->area_name[0], newpmap[zoneId] + PlayerCountDifficultyOffset, PlayerCountDifficultyOffset);
++                                        zoneId ? GetAreaEntryById(zoneId)->area_name[0] : "Unknown", newpmap[zoneId] + PlayerCountDifficultyOffset, PlayerCountDifficultyOffset);
 +                                }
 +                            }
 +                        }
@@ -1196,7 +1196,7 @@ index 00000000..b4106f5e
 +
 +#endif
 diff --git a/src/server/game/Entities/Creature/Creature.cpp b/src/server/game/Entities/Creature/Creature.cpp
-index bfc617a5..6ae5d328 100644
+index 696daa2d..2bc32040 100644
 --- a/src/server/game/Entities/Creature/Creature.cpp
 +++ b/src/server/game/Entities/Creature/Creature.cpp
 @@ -927,6 +927,8 @@ void Creature::Update(uint32 diff)
@@ -1209,7 +1209,7 @@ index bfc617a5..6ae5d328 100644
  
  void Creature::Regenerate(Powers power)
 diff --git a/src/server/game/Entities/Creature/Creature.h b/src/server/game/Entities/Creature/Creature.h
-index e0be185b..050615e2 100644
+index aeb04afc..17e840fa 100644
 --- a/src/server/game/Entities/Creature/Creature.h
 +++ b/src/server/game/Entities/Creature/Creature.h
 @@ -33,6 +33,8 @@ class bot_ai;
@@ -1287,10 +1287,10 @@ index 00000000..70ec8aee
 +
 +#endif
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 9a5ded71..831311eb 100644
+index 4afd95d7..daa04600 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
-@@ -6632,6 +6632,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
+@@ -6634,6 +6634,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
  
  int32 Unit::HealBySpell(HealInfo& healInfo, bool critical /*= false*/)
  {
@@ -1302,7 +1302,7 @@ index 9a5ded71..831311eb 100644
      Unit::CalcHealAbsorb(healInfo);
      Unit::DealHeal(healInfo);
 diff --git a/src/server/game/Entities/Unit/Unit.h b/src/server/game/Entities/Unit/Unit.h
-index ca491364..2149a631 100644
+index 4ba4a03d..0fe9c876 100644
 --- a/src/server/game/Entities/Unit/Unit.h
 +++ b/src/server/game/Entities/Unit/Unit.h
 @@ -494,6 +494,8 @@ class TC_GAME_API HealInfo
@@ -1490,7 +1490,7 @@ index 6d85a6d5..08c73491 100644
          void OnDamage(Unit* attacker, Unit* victim, uint32& damage);
          void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage);
 diff --git a/src/server/game/World/World.cpp b/src/server/game/World/World.cpp
-index 0c6b5cff..694223d9 100644
+index 2d8882dc..4ca76c15 100644
 --- a/src/server/game/World/World.cpp
 +++ b/src/server/game/World/World.cpp
 @@ -26,6 +26,7 @@
@@ -1513,10 +1513,10 @@ index 0c6b5cff..694223d9 100644
  
      TC_LOG_INFO("server.loading", "Validating spell scripts...");
 diff --git a/src/server/worldserver/worldserver.conf.dist b/src/server/worldserver/worldserver.conf.dist
-index 050b68ea..b7ef88db 100644
+index f15d05be..fde8ada1 100644
 --- a/src/server/worldserver/worldserver.conf.dist
 +++ b/src/server/worldserver/worldserver.conf.dist
-@@ -4396,3 +4396,196 @@ NpcBot.OwnershipExpireTime = 0
+@@ -4398,3 +4398,196 @@ NpcBot.OwnershipExpireTime = 0
  
  #
  ###################################################################################################
