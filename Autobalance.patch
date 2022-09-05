@@ -1,4 +1,4 @@
- src/server/game/Entities/Creature/AutoBalance.cpp | 1145 +++++++++++++++++++++
+ src/server/game/Entities/Creature/AutoBalance.cpp | 1074 +++++++++++++++++++++
  src/server/game/Entities/Creature/AutoBalance.h   |   23 +
  src/server/game/Entities/Creature/Creature.cpp    |    2 +
  src/server/game/Entities/Creature/Creature.h      |    4 +
@@ -10,17 +10,17 @@
  src/server/game/Scripting/ScriptMgr.h             |   33 +
  src/server/game/World/World.cpp                   |    5 +
  src/server/worldserver/worldserver.conf.dist      |  193 ++++
- 12 files changed, 1503 insertions(+)
+ 12 files changed, 1432 insertions(+)
  create mode 100644 src/server/game/Entities/Creature/AutoBalance.cpp
  create mode 100644 src/server/game/Entities/Creature/AutoBalance.h
  create mode 100644 src/server/game/Entities/Creature/CustomData.h
 
 diff --git a/src/server/game/Entities/Creature/AutoBalance.cpp b/src/server/game/Entities/Creature/AutoBalance.cpp
 new file mode 100644
-index 00000000..de5ce6c4
+index 000000000..8a125f085
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/AutoBalance.cpp
-@@ -0,0 +1,1145 @@
+@@ -0,0 +1,1074 @@
 +/*
 +* Copyright (C) 2020-2021 Trickerer <https://github.com/trickerer/>
 +* Copyright (C) 2012 CVMagic <http://www.trinitycore.org/f/topic/6551-vas-autobalance/>
@@ -64,22 +64,10 @@ index 00000000..de5ce6c4
 +# include "botmgr.h"
 +#endif
 +
-+#if !defined(_MSC_VER) || _MSC_VER >= 1600
-+# define SCRIPT_VERSION_LAST
-+#endif
-+
-+#ifdef SCRIPT_VERSION_LAST
 +# define NOTHING nullptr
 +# define UNORDERED_MAP std::unordered_map
 +# define GetGUIDLow GetGUID().GetCounter
 +# define area_name AreaName
-+#else
-+# define NOTHING NULL
-+# define GetLevel getLevel
-+# define GetPowerType getPowerType
-+# define SetPowerType setPowerType
-+# define SetStatFlatModifier SetModifierValue
-+#endif
 +
 +// The map values correspond with the .AutoBalance.XX.Name entries in the configuration file.
 +static std::map<uint32, int32> forcedCreatureIds;
@@ -113,11 +101,7 @@ index 00000000..de5ce6c4
 +
 +AreaTableEntry const* GetAreaEntryById(uint32 id)
 +{
-+#ifdef SCRIPT_VERSION_LAST
 +    return sAreaTableStore.LookupEntry(id);
-+#else
-+    return GetAreaEntryByAreaID(id);
-+#endif
 +}
 +
 +void GetAreaLevel(Map const* map, uint8 areaid, uint8 &minlevel, uint8 &maxlevel)
@@ -125,31 +109,18 @@ index 00000000..de5ce6c4
 +    LFGDungeonEntry const* dungeon = GetLFGDungeon(map->GetId(), map->GetDifficulty());
 +    if (dungeon && (map->IsDungeon() || map->IsRaid()))
 +    {
-+#ifdef SCRIPT_VERSION_LAST
 +        minlevel = dungeon->MinLevel;
 +        maxlevel = dungeon->TargetLevel ? dungeon->TargetLevel : dungeon->MaxLevel;
-+#else
-+        minlevel = dungeon->minlevel;
-+        maxlevel = dungeon->reclevel ? dungeon->reclevel : dungeon->maxlevel;
-+#endif
 +    }
 +
 +    if (!minlevel && !maxlevel)
 +    {
 +        AreaTableEntry const* areaEntry = GetAreaEntryById(areaid);
-+#ifdef SCRIPT_VERSION_LAST
 +        if (areaEntry && areaEntry->ExplorationLevel > 0)
 +        {
 +            minlevel = areaEntry->ExplorationLevel;
 +            maxlevel = areaEntry->ExplorationLevel;
 +        }
-+#else
-+        if (areaEntry && areaEntry->area_level > 0)
-+        {
-+            minlevel = areaEntry->area_level;
-+            maxlevel = areaEntry->area_level;
-+        }
-+#endif
 +    }
 +}
 +
@@ -256,11 +227,7 @@ index 00000000..de5ce6c4
 +public:
 +    AutoBalance_PlayerScript() : PlayerScript("AutoBalance_PlayerScript") { }
 +
-+#ifdef SCRIPT_VERSION_LAST
-+    void OnLogin(Player* player, bool firstLogin) override
-+#else
-+    void OnLogin(Player* player) override
-+#endif
++    void OnLogin(Player* player, bool /*firstLogin*/) override
 +    {
 +        if (AnnounceAB)
 +            ChatHandler(player->GetSession()).SendSysMessage("This server is running the |cff4CFF00AutoBalance |rmodule.");
@@ -328,7 +295,7 @@ index 00000000..de5ce6c4
 +    }
 +
 +private:
-+    void ModifyAmount(Unit* source, Unit* target, uint32 &value) const
++    void ModifyAmount(Unit* source, Unit* /*target*/, uint32 &value) const
 +    {
 +        if (!Is_AB_enabled)
 +            return;
@@ -356,11 +323,11 @@ index 00000000..de5ce6c4
 +    return zoneLevels.count(zoneId) != 0 ? zoneLevels[zoneId] : 0;
 +}
 +
++#if MOD_PRESENT_NPCBOTS == 1
 +uint32 CountedControlledCreatures(Player const* player)
 +{
 +    uint32 count = 0;
 +
-+#if MOD_PRESENT_NPCBOTS == 1
 +    if (CountNpcBots && player->HaveBot())
 +    {
 +        BotMap const* botmap = player->GetBotMgr()->GetBotMap();
@@ -368,6 +335,10 @@ index 00000000..de5ce6c4
 +            if (itr->second && itr->second->IsInMap(player))
 +                count++;
 +    }
++#else
++uint32 CountedControlledCreatures(Player const* /*player*/)
++{
++    uint32 count = 0;
 +#endif
 +
 +    return count;
@@ -981,9 +952,7 @@ index 00000000..de5ce6c4
 +    }
 +};
 +
-+#ifdef SCRIPT_VERSION_LAST
 +using namespace Trinity::ChatCommands;
-+#endif
 +
 +#define GM_COMMANDS rbac::RBACPermissions(197)
 +
@@ -992,7 +961,6 @@ index 00000000..de5ce6c4
 +public:
 +    AutoBalance_CommandScript() : CommandScript("AutoBalance_CommandScript") { }
 +
-+#ifdef SCRIPT_VERSION_LAST
 +    ChatCommandTable GetCommands() const override
 +    {
 +        static ChatCommandTable ABCommandTable =
@@ -1007,33 +975,13 @@ index 00000000..de5ce6c4
 +
 +        static ChatCommandTable commandTable =
 +        {
-+            { "vas",        ABCommandTable                                            },
++            { "vas",        ABCommandTable                                               },
 +        };
-+#else
-+    ChatCommand* GetCommands() const
-+    {
-+        static ChatCommand ABCommandTable[] =
-+        {
-+            { "mstats",     GM_COMMANDS, true, &HandleABMStatsCommand,        "Lists all registered map update timers",                                                             NULL },
-+            { "zstats",     GM_COMMANDS, true, &HandleABZStatsCommand,        "Lists all registered zones with players count",                                                             NULL },
-+            { "setoffset",  GM_COMMANDS, true, &HandleABSetOffsetCommand,     "Sets the global Player Difficulty Offset for instances. Example: (You + offset(1) = 2 player difficulty).", NULL },
-+            { "getoffset",  GM_COMMANDS, true, &HandleABGetOffsetCommand,     "Shows current global player offset value",                                                                  NULL },
-+            { "mapstat",    GM_COMMANDS, false,&HandleABMapStatsCommand,      "Shows current autobalance information for this map-",                                                       NULL },
-+            { "crstat",     GM_COMMANDS, false,&HandleABCreatureStatsCommand, "Shows current autobalance information for selected creature.",                                              NULL },
-+            { NULL,         0,           false,NULL,                          "",                                                                                                          NULL }
-+        };
-+
-+        static ChatCommand commandTable[] =
-+        {
-+            { "vas",        GM_COMMANDS, true, NULL,                          "", ABCommandTable },
-+            { NULL,         0,           false,NULL,                          "",           NULL }
-+        };
-+#endif
 +
 +        return commandTable;
 +    }
 +
-+    static bool HandleABMStatsCommand(ChatHandler* handler, const char* /*args*/)
++    static bool HandleABMStatsCommand(ChatHandler* handler)
 +    {
 +        if (recalcTimers.empty())
 +        {
@@ -1044,19 +992,13 @@ index 00000000..de5ce6c4
 +        for (PlayersRecalcMap::const_iterator itr = recalcTimers.begin(); itr != recalcTimers.end(); ++itr)
 +        {
 +            MapEntry const* m = sMapStore.LookupEntry(itr->first);
-+            handler->PSendSysMessage("Map: %s (%u), cur time: %u",
-+#ifdef SCRIPT_VERSION_LAST
-+                m->MapName[0],
-+#else
-+                m->name[0],
-+#endif
-+                itr->first, itr->second);
++            handler->PSendSysMessage("Map: %s (%u), cur time: %u", m->MapName[0], itr->first, itr->second);
 +        }
 +
 +        return true;
 +    }
 +
-+    static bool HandleABZStatsCommand(ChatHandler* handler, const char* /*args*/)
++    static bool HandleABZStatsCommand(ChatHandler* handler)
 +    {
 +        if (zonePlayers.empty())
 +        {
@@ -1074,37 +1016,28 @@ index 00000000..de5ce6c4
 +        return true;
 +    }
 +
-+    static bool HandleABSetOffsetCommand(ChatHandler* handler, const char* args)
++    static bool HandleABSetOffsetCommand(ChatHandler* handler, Optional<int8> offset)
 +    {
-+        if (!*args)
++        if (!offset)
 +        {
 +            handler->PSendSysMessage(".vas setoffset #");
 +            handler->PSendSysMessage("Sets the Player Difficulty Offset for instances. Example: (You + offset(1) = 2 player difficulty).");
 +            return false;
 +        }
-+        char* offset = strtok((char*)args, " ");
-+        int32 offseti = -1;
 +
-+        if (!offset)
-+        {
-+            handler->PSendSysMessage("Error changing Player Difficulty Offset! Please try again.");
-+            return false;
-+        }
-+
-+        offseti = (uint32)atoi(offset);
-+        handler->PSendSysMessage("Changing Player Difficulty Offset to %i.", offseti);
-+        PlayerCountDifficultyOffset = offseti;
++        handler->PSendSysMessage("Changing Player Difficulty Offset to %i.", int32(*offset));
++        PlayerCountDifficultyOffset = *offset;
 +
 +        return true;
 +    }
 +
-+    static bool HandleABGetOffsetCommand(ChatHandler* handler, const char* /*args*/)
++    static bool HandleABGetOffsetCommand(ChatHandler* handler)
 +    {
 +        handler->PSendSysMessage("Current Player Difficulty Offset = %i", PlayerCountDifficultyOffset);
 +        return true;
 +    }
 +
-+    static bool HandleABMapStatsCommand(ChatHandler* handler, const char* /*args*/)
++    static bool HandleABMapStatsCommand(ChatHandler* handler)
 +    {
 +        Player* pl = handler->getSelectedPlayer();
 +        if (!pl)
@@ -1123,7 +1056,7 @@ index 00000000..de5ce6c4
 +        return true;
 +    }
 +
-+    static bool HandleABCreatureStatsCommand(ChatHandler* handler, const char* /*args*/)
++    static bool HandleABCreatureStatsCommand(ChatHandler* handler)
 +    {
 +        Creature* target = handler->getSelectedCreature();
 +        if (!target)
@@ -1157,18 +1090,14 @@ index 00000000..de5ce6c4
 +
 +void InitAutoBalanceSystem()
 +{
-+#ifdef SCRIPT_VERSION_LAST
 +    std::string const& oldcontext = sScriptMgr->GetCurrentScriptContext();
 +    sScriptMgr->SetScriptContext("__autobalance__");
 +    AddSC_AutoBalance();
 +    sScriptMgr->SetScriptContext(oldcontext);
-+#else
-+    AddSC_AutoBalance();
-+#endif
 +}
 diff --git a/src/server/game/Entities/Creature/AutoBalance.h b/src/server/game/Entities/Creature/AutoBalance.h
 new file mode 100644
-index 00000000..b4106f5e
+index 000000000..b4106f5eb
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/AutoBalance.h
 @@ -0,0 +1,23 @@
@@ -1196,7 +1125,7 @@ index 00000000..b4106f5e
 +
 +#endif
 diff --git a/src/server/game/Entities/Creature/Creature.cpp b/src/server/game/Entities/Creature/Creature.cpp
-index 733a5e92..a290d34b 100644
+index c92301463..7e74746b3 100644
 --- a/src/server/game/Entities/Creature/Creature.cpp
 +++ b/src/server/game/Entities/Creature/Creature.cpp
 @@ -863,6 +863,8 @@ void Creature::Update(uint32 diff)
@@ -1209,7 +1138,7 @@ index 733a5e92..a290d34b 100644
  
  void Creature::Regenerate(Powers power)
 diff --git a/src/server/game/Entities/Creature/Creature.h b/src/server/game/Entities/Creature/Creature.h
-index 73ed5371..0c57910f 100644
+index 8f1666ccf..aaabba18f 100644
 --- a/src/server/game/Entities/Creature/Creature.h
 +++ b/src/server/game/Entities/Creature/Creature.h
 @@ -28,6 +28,8 @@
@@ -1232,7 +1161,7 @@ index 73ed5371..0c57910f 100644
  
 diff --git a/src/server/game/Entities/Creature/CustomData.h b/src/server/game/Entities/Creature/CustomData.h
 new file mode 100644
-index 00000000..70ec8aee
+index 000000000..70ec8aee9
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/CustomData.h
 @@ -0,0 +1,50 @@
@@ -1287,10 +1216,10 @@ index 00000000..70ec8aee
 +
 +#endif
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 2f4678c5..07588e90 100644
+index 8316f8ff4..d568614ba 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
-@@ -6440,6 +6440,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
+@@ -6449,6 +6449,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
  
  int32 Unit::HealBySpell(HealInfo& healInfo, bool critical /*= false*/)
  {
@@ -1302,10 +1231,10 @@ index 2f4678c5..07588e90 100644
      Unit::CalcHealAbsorb(healInfo);
      Unit::DealHeal(healInfo);
 diff --git a/src/server/game/Entities/Unit/Unit.h b/src/server/game/Entities/Unit/Unit.h
-index 795c6313..8a57265a 100644
+index 88075ef89..b02838da2 100644
 --- a/src/server/game/Entities/Unit/Unit.h
 +++ b/src/server/game/Entities/Unit/Unit.h
-@@ -494,6 +494,8 @@ class TC_GAME_API HealInfo
+@@ -495,6 +495,8 @@ class TC_GAME_API HealInfo
          SpellSchoolMask GetSchoolMask() const { return _schoolMask; };
  
          uint32 GetHitMask() const;
@@ -1315,7 +1244,7 @@ index 795c6313..8a57265a 100644
  
  class TC_GAME_API ProcEventInfo
 diff --git a/src/server/game/Maps/Map.h b/src/server/game/Maps/Map.h
-index c926a00f..9125f472 100644
+index c926a00f2..9125f472c 100644
 --- a/src/server/game/Maps/Map.h
 +++ b/src/server/game/Maps/Map.h
 @@ -18,6 +18,8 @@
@@ -1337,7 +1266,7 @@ index c926a00f..9125f472 100644
          PlayerList const& GetPlayers() const { return m_mapRefManager; }
  
 diff --git a/src/server/game/Scripting/ScriptMgr.cpp b/src/server/game/Scripting/ScriptMgr.cpp
-index be8494df..43a43e24 100644
+index be8494df7..43a43e242 100644
 --- a/src/server/game/Scripting/ScriptMgr.cpp
 +++ b/src/server/game/Scripting/ScriptMgr.cpp
 @@ -1466,6 +1466,8 @@ void ScriptMgr::OnPlayerEnterMap(Map* map, Player* player)
@@ -1418,7 +1347,7 @@ index be8494df..43a43e24 100644
 +template class TC_GAME_API ScriptRegistry<AllMapScript>;
 +template class TC_GAME_API ScriptRegistry<AllCreatureScript>;
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index b0f641b8..4a0599ae 100644
+index b0f641b80..4a0599aeb 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
 @@ -307,6 +307,21 @@ class TC_GAME_API FormulaScript : public ScriptObject
@@ -1490,7 +1419,7 @@ index b0f641b8..4a0599ae 100644
          void OnDamage(Unit* attacker, Unit* victim, uint32& damage);
          void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage);
 diff --git a/src/server/game/World/World.cpp b/src/server/game/World/World.cpp
-index 2d8882dc..4ca76c15 100644
+index 77c474439..bda82881b 100644
 --- a/src/server/game/World/World.cpp
 +++ b/src/server/game/World/World.cpp
 @@ -26,6 +26,7 @@
@@ -1501,7 +1430,7 @@ index 2d8882dc..4ca76c15 100644
  #include "BattlefieldMgr.h"
  #include "BattlegroundMgr.h"
  #include "CalendarMgr.h"
-@@ -2078,6 +2079,10 @@ void World::SetInitialWorldSettings()
+@@ -2080,6 +2081,10 @@ void World::SetInitialWorldSettings()
  
      TC_LOG_INFO("server.loading", "Initializing Scripts...");
      sScriptMgr->Initialize();
@@ -1513,10 +1442,10 @@ index 2d8882dc..4ca76c15 100644
  
      TC_LOG_INFO("server.loading", "Validating spell scripts...");
 diff --git a/src/server/worldserver/worldserver.conf.dist b/src/server/worldserver/worldserver.conf.dist
-index f475d024..3b6bb72e 100644
+index 442681e64..035133085 100644
 --- a/src/server/worldserver/worldserver.conf.dist
 +++ b/src/server/worldserver/worldserver.conf.dist
-@@ -4125,3 +4125,196 @@ Metric.OverallStatusInterval = 1
+@@ -4147,3 +4147,196 @@ Metric.OverallStatusInterval = 1
  
  #
  ###################################################################################################
