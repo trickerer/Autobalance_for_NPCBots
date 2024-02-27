@@ -1125,10 +1125,10 @@ index 000000000..b4106f5eb
 +
 +#endif
 diff --git a/src/server/game/Entities/Creature/Creature.cpp b/src/server/game/Entities/Creature/Creature.cpp
-index c92301463..7e74746b3 100644
+index 900ae1b9d..e11646ece 100644
 --- a/src/server/game/Entities/Creature/Creature.cpp
 +++ b/src/server/game/Entities/Creature/Creature.cpp
-@@ -863,6 +863,8 @@ void Creature::Update(uint32 diff)
+@@ -864,6 +864,8 @@ void Creature::Update(uint32 diff)
          default:
              break;
      }
@@ -1138,7 +1138,7 @@ index c92301463..7e74746b3 100644
  
  void Creature::Regenerate(Powers power)
 diff --git a/src/server/game/Entities/Creature/Creature.h b/src/server/game/Entities/Creature/Creature.h
-index 8f1666ccf..aaabba18f 100644
+index 8a65ca537..1a258d87c 100644
 --- a/src/server/game/Entities/Creature/Creature.h
 +++ b/src/server/game/Entities/Creature/Creature.h
 @@ -28,6 +28,8 @@
@@ -1216,10 +1216,10 @@ index 000000000..70ec8aee9
 +
 +#endif
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 8316f8ff4..d568614ba 100644
+index f879b6507..50f1e37bd 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
-@@ -6449,6 +6449,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
+@@ -6407,6 +6407,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
  
  int32 Unit::HealBySpell(HealInfo& healInfo, bool critical /*= false*/)
  {
@@ -1231,7 +1231,7 @@ index 8316f8ff4..d568614ba 100644
      Unit::CalcHealAbsorb(healInfo);
      Unit::DealHeal(healInfo);
 diff --git a/src/server/game/Entities/Unit/Unit.h b/src/server/game/Entities/Unit/Unit.h
-index 88075ef89..b02838da2 100644
+index 7074a6a80..2d784e69c 100644
 --- a/src/server/game/Entities/Unit/Unit.h
 +++ b/src/server/game/Entities/Unit/Unit.h
 @@ -495,6 +495,8 @@ class TC_GAME_API HealInfo
@@ -1244,7 +1244,7 @@ index 88075ef89..b02838da2 100644
  
  class TC_GAME_API ProcEventInfo
 diff --git a/src/server/game/Maps/Map.h b/src/server/game/Maps/Map.h
-index c926a00f2..9125f472c 100644
+index dadd8cc14..1e9a0d5ae 100644
 --- a/src/server/game/Maps/Map.h
 +++ b/src/server/game/Maps/Map.h
 @@ -18,6 +18,8 @@
@@ -1256,7 +1256,7 @@ index c926a00f2..9125f472c 100644
  #include "Define.h"
  
  #include "Cell.h"
-@@ -479,6 +481,8 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
+@@ -481,6 +483,8 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
  
          void SendToPlayers(WorldPacket const* data) const;
  
@@ -1266,10 +1266,10 @@ index c926a00f2..9125f472c 100644
          PlayerList const& GetPlayers() const { return m_mapRefManager; }
  
 diff --git a/src/server/game/Scripting/ScriptMgr.cpp b/src/server/game/Scripting/ScriptMgr.cpp
-index be8494df7..43a43e242 100644
+index b35aa9760..827eb20b7 100644
 --- a/src/server/game/Scripting/ScriptMgr.cpp
 +++ b/src/server/game/Scripting/ScriptMgr.cpp
-@@ -1466,6 +1466,8 @@ void ScriptMgr::OnPlayerEnterMap(Map* map, Player* player)
+@@ -1471,6 +1471,8 @@ void ScriptMgr::OnPlayerEnterMap(Map* map, Player* player)
  
      FOREACH_SCRIPT(PlayerScript)->OnMapChanged(player);
  
@@ -1278,7 +1278,7 @@ index be8494df7..43a43e242 100644
      SCR_MAP_BGN(WorldMapScript, map, itr, end, entry, IsWorldMap);
          itr->second->OnPlayerEnter(map, player);
      SCR_MAP_END;
-@@ -1484,6 +1486,8 @@ void ScriptMgr::OnPlayerLeaveMap(Map* map, Player* player)
+@@ -1489,6 +1491,8 @@ void ScriptMgr::OnPlayerLeaveMap(Map* map, Player* player)
      ASSERT(map);
      ASSERT(player);
  
@@ -1287,7 +1287,7 @@ index be8494df7..43a43e242 100644
      SCR_MAP_BGN(WorldMapScript, map, itr, end, entry, IsWorldMap);
          itr->second->OnPlayerLeave(map, player);
      SCR_MAP_END;
-@@ -1501,6 +1505,8 @@ void ScriptMgr::OnMapUpdate(Map* map, uint32 diff)
+@@ -1506,6 +1510,8 @@ void ScriptMgr::OnMapUpdate(Map* map, uint32 diff)
  {
      ASSERT(map);
  
@@ -1296,7 +1296,7 @@ index be8494df7..43a43e242 100644
      SCR_MAP_BGN(WorldMapScript, map, itr, end, entry, IsWorldMap);
          itr->second->OnUpdate(map, diff);
      SCR_MAP_END;
-@@ -2098,6 +2104,11 @@ void ScriptMgr::OnGroupDisband(Group* group)
+@@ -2103,6 +2109,11 @@ void ScriptMgr::OnGroupDisband(Group* group)
  }
  
  // Unit
@@ -1308,7 +1308,7 @@ index be8494df7..43a43e242 100644
  void ScriptMgr::OnHeal(Unit* healer, Unit* reciever, uint32& gain)
  {
      FOREACH_SCRIPT(UnitScript)->OnHeal(healer, reciever, gain);
-@@ -2123,6 +2134,31 @@ void ScriptMgr::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& dama
+@@ -2128,6 +2139,31 @@ void ScriptMgr::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& dama
      FOREACH_SCRIPT(UnitScript)->ModifySpellDamageTaken(target, attacker, damage);
  }
  
@@ -1340,18 +1340,18 @@ index be8494df7..43a43e242 100644
  SpellScriptLoader::SpellScriptLoader(char const* name)
      : ScriptObject(name)
  {
-@@ -2346,3 +2382,5 @@ template class TC_GAME_API ScriptRegistry<GuildScript>;
+@@ -2839,3 +2875,5 @@ template class TC_GAME_API ScriptRegistry<GuildScript>;
  template class TC_GAME_API ScriptRegistry<GroupScript>;
  template class TC_GAME_API ScriptRegistry<UnitScript>;
  template class TC_GAME_API ScriptRegistry<AccountScript>;
 +template class TC_GAME_API ScriptRegistry<AllMapScript>;
 +template class TC_GAME_API ScriptRegistry<AllCreatureScript>;
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index b0f641b80..4a0599aeb 100644
+index e329fbaee..08fde7926 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
-@@ -307,6 +307,21 @@ class TC_GAME_API FormulaScript : public ScriptObject
-         virtual void OnGroupRateCalculation(float& /*rate*/, uint32 /*count*/, bool /*isRaid*/) { }
+@@ -293,6 +293,21 @@ class TC_GAME_API FormulaScript : public ScriptObject
+         virtual void OnGroupRateCalculation(float& rate, uint32 count, bool isRaid);
  };
  
 +class AllMapScript : public ScriptObject
@@ -1369,21 +1369,21 @@ index b0f641b80..4a0599aeb 100644
 +    virtual void OnAllUpdate(Map* /*map*/, uint32 /*diff*/) { }
 +};
 +
- template<class TMap> class MapScript : public UpdatableScript<TMap>
+ template<class TMap>
+ class TC_GAME_API MapScript
  {
-     MapEntry const* _mapEntry;
-@@ -397,6 +412,9 @@ class TC_GAME_API UnitScript : public ScriptObject
-         UnitScript(char const* name);
+@@ -385,6 +400,9 @@ class TC_GAME_API UnitScript : public ScriptObject
+         explicit UnitScript(char const* name);
  
      public:
 +        // Called before heal is received
 +        virtual void ModifyHealRecieved(Unit* /*healer*/, Unit* /*target*/, uint32& /*heal*/) { }
 +
          // Called when a unit deals healing to another unit
-         virtual void OnHeal(Unit* /*healer*/, Unit* /*reciever*/, uint32& /*gain*/) { }
+         virtual void OnHeal(Unit* healer, Unit* reciever, uint32& gain);
  
-@@ -424,6 +442,16 @@ class TC_GAME_API CreatureScript : public ScriptObject
-         virtual CreatureAI* GetAI(Creature* /*creature*/) const = 0;
+@@ -412,6 +430,16 @@ class TC_GAME_API CreatureScript : public ScriptObject
+         virtual CreatureAI* GetAI(Creature* creature) const = 0;
  };
  
 +class TC_GAME_API AllCreatureScript : public ScriptObject
@@ -1399,7 +1399,7 @@ index b0f641b80..4a0599aeb 100644
  class TC_GAME_API GameObjectScript : public ScriptObject
  {
      protected:
-@@ -936,6 +964,10 @@ class TC_GAME_API ScriptMgr
+@@ -933,6 +961,10 @@ class TC_GAME_API ScriptMgr
          bool OnItemRemove(Player* player, Item* item);
          bool OnCastItemCombatSpell(Player* player, Unit* victim, SpellInfo const* spellInfo, Item* item);
  
@@ -1410,7 +1410,7 @@ index b0f641b80..4a0599aeb 100644
      public: /* CreatureScript */
  
          CreatureAI* GetCreatureAI(Creature* creature);
-@@ -1075,6 +1107,7 @@ class TC_GAME_API ScriptMgr
+@@ -1072,6 +1104,7 @@ class TC_GAME_API ScriptMgr
  
      public: /* UnitScript */
  
@@ -1419,7 +1419,7 @@ index b0f641b80..4a0599aeb 100644
          void OnDamage(Unit* attacker, Unit* victim, uint32& damage);
          void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage);
 diff --git a/src/server/game/World/World.cpp b/src/server/game/World/World.cpp
-index 77c474439..bda82881b 100644
+index f080cc537..f9b8b6bde 100644
 --- a/src/server/game/World/World.cpp
 +++ b/src/server/game/World/World.cpp
 @@ -26,6 +26,7 @@
@@ -1442,7 +1442,7 @@ index 77c474439..bda82881b 100644
  
      TC_LOG_INFO("server.loading", "Validating spell scripts...");
 diff --git a/src/server/worldserver/worldserver.conf.dist b/src/server/worldserver/worldserver.conf.dist
-index 442681e64..035133085 100644
+index 90ad17d31..bc5562bf9 100644
 --- a/src/server/worldserver/worldserver.conf.dist
 +++ b/src/server/worldserver/worldserver.conf.dist
 @@ -4147,3 +4147,196 @@ Metric.OverallStatusInterval = 1
