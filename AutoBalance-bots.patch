@@ -17,7 +17,7 @@
 
 diff --git a/src/server/game/Entities/Creature/AutoBalance.cpp b/src/server/game/Entities/Creature/AutoBalance.cpp
 new file mode 100644
-index 000000000..f0cf42839
+index 000000000..7ba02c273
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/AutoBalance.cpp
 @@ -0,0 +1,1074 @@
@@ -346,8 +346,8 @@ index 000000000..f0cf42839
 +
 +bool CanModifyCreatureAttributes(Creature const* creature)
 +{
-+    if (!creature || !creature->IsInWorld() || creature->IsControlledByPlayer() ||
-+        creature->GetCreatureType() == CREATURE_TYPE_CRITTER)
++    if (!creature || !creature->IsInWorld() || creature->IsControlledByPlayer() || creature->IsCritter() ||
++        (creature->IsTrigger() && !creature->isWorldBoss() && !creature->IsDungeonBoss()))
 +        return false;
 +
 +#if MOD_PRESENT_NPCBOTS == 1
@@ -929,8 +929,8 @@ index 000000000..f0cf42839
 +        creature->SetStatFlatModifier(UNIT_MOD_MANA, BASE_VALUE, float(scaledMana));
 +        creatureABInfo->damageMultiplier = damageMul;
 +
-+        uint32 scaledCurHealth = (prevHealth && prevMaxHealth) ? float(scaledHealth) / float(prevMaxHealth) * float(prevHealth) : 0;
-+        uint32 scaledCurPower = (prevPower && prevMaxPower) ? float(scaledMana) / float(prevMaxPower) * float(prevPower) : 0;
++        uint32 scaledCurHealth = (prevHealth && prevMaxHealth) ? std::max<uint32>(uint32(float(scaledHealth) / float(prevMaxHealth) * float(prevHealth)), 1) : 0;
++        uint32 scaledCurPower = (prevPower && prevMaxPower) ? std::max<uint32>(uint32(float(scaledMana) / float(prevMaxPower) * float(prevPower)), 1) : 0;
 +
 +        if (creature->GetGUIDLow() == DEBUG_CREATURE)
 +            TC_LOG_ERROR("scripts", "AB: prevHealth %u, prevMaxHealth %u, scaledHealth %u, scaledCurHealth %u",
@@ -1216,7 +1216,7 @@ index 000000000..70ec8aee9
 +
 +#endif
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index bdd4b1341..32daf9f15 100644
+index 3d097fdda..eac5df61b 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
 @@ -6686,6 +6686,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
@@ -1231,7 +1231,7 @@ index bdd4b1341..32daf9f15 100644
      Unit::CalcHealAbsorb(healInfo);
      Unit::DealHeal(healInfo);
 diff --git a/src/server/game/Entities/Unit/Unit.h b/src/server/game/Entities/Unit/Unit.h
-index ef1cd0b40..874375979 100644
+index c3cd9761a..cb5a02948 100644
 --- a/src/server/game/Entities/Unit/Unit.h
 +++ b/src/server/game/Entities/Unit/Unit.h
 @@ -495,6 +495,8 @@ class TC_GAME_API HealInfo
@@ -1244,7 +1244,7 @@ index ef1cd0b40..874375979 100644
  
  class TC_GAME_API ProcEventInfo
 diff --git a/src/server/game/Maps/Map.h b/src/server/game/Maps/Map.h
-index dadd8cc14..1e9a0d5ae 100644
+index e51e50cbf..edd8ee751 100644
 --- a/src/server/game/Maps/Map.h
 +++ b/src/server/game/Maps/Map.h
 @@ -18,6 +18,8 @@
@@ -1256,7 +1256,7 @@ index dadd8cc14..1e9a0d5ae 100644
  #include "Define.h"
  
  #include "Cell.h"
-@@ -481,6 +483,8 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
+@@ -485,6 +487,8 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
  
          void SendToPlayers(WorldPacket const* data) const;
  
@@ -1442,10 +1442,10 @@ index f080cc537..f9b8b6bde 100644
  
      TC_LOG_INFO("server.loading", "Validating spell scripts...");
 diff --git a/src/server/worldserver/worldserver.conf.dist b/src/server/worldserver/worldserver.conf.dist
-index 6b0fec2f1..6405d8db1 100644
+index 4cd9991ad..2f762c95a 100644
 --- a/src/server/worldserver/worldserver.conf.dist
 +++ b/src/server/worldserver/worldserver.conf.dist
-@@ -4649,3 +4649,196 @@ NpcBot.HK.Rate.Honor = 1.0
+@@ -4696,3 +4696,196 @@ NpcBot.HK.Rate.Honor = 1.0
  
  #
  ###################################################################################################
