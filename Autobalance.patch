@@ -1,4 +1,4 @@
- src/server/game/Entities/Creature/AutoBalance.cpp | 1082 +++++++++++++++++++++
+ src/server/game/Entities/Creature/AutoBalance.cpp | 1083 +++++++++++++++++++++
  src/server/game/Entities/Creature/AutoBalance.h   |   23 +
  src/server/game/Entities/Creature/Creature.cpp    |    2 +
  src/server/game/Entities/Creature/Creature.h      |    4 +
@@ -10,17 +10,17 @@
  src/server/game/Scripting/ScriptMgr.h             |   33 +
  src/server/game/World/World.cpp                   |    5 +
  src/server/worldserver/worldserver.conf.dist      |  193 ++++
- 12 files changed, 1440 insertions(+)
+ 12 files changed, 1441 insertions(+)
  create mode 100644 src/server/game/Entities/Creature/AutoBalance.cpp
  create mode 100644 src/server/game/Entities/Creature/AutoBalance.h
  create mode 100644 src/server/game/Entities/Creature/CustomData.h
 
 diff --git a/src/server/game/Entities/Creature/AutoBalance.cpp b/src/server/game/Entities/Creature/AutoBalance.cpp
 new file mode 100644
-index 000000000..ac9a0e1ae
+index 000000000..78dca8d86
 --- /dev/null
 +++ b/src/server/game/Entities/Creature/AutoBalance.cpp
-@@ -0,0 +1,1082 @@
+@@ -0,0 +1,1083 @@
 +/*
 +* Copyright (C) 2020-2021 Trickerer <https://github.com/trickerer/>
 +* Copyright (C) 2012 CVMagic <http://www.trinitycore.org/f/topic/6551-vas-autobalance/>
@@ -928,7 +928,6 @@ index 000000000..ac9a0e1ae
 +        creature->SetStatFlatModifier(UNIT_MOD_ARMOR, BASE_VALUE, float(newBaseArmor));
 +        creature->SetCreateHealth(scaledHealth);
 +        creature->SetMaxHealth(scaledHealth);
-+        creature->ResetPlayerDamageReq();
 +        creature->SetCreateMana(scaledMana);
 +        creature->SetMaxPower(POWER_MANA, scaledMana);
 +        creature->SetStatFlatModifier(UNIT_MOD_ENERGY, BASE_VALUE, 100.0f);
@@ -948,6 +947,8 @@ index 000000000..ac9a0e1ae
 +                prevPower, prevMaxPower, scaledMana, scaledCurPower);
 +
 +        creature->SetHealth(scaledCurHealth);
++        creature->ResetPlayerDamageReq();
++
 +        if (pType == POWER_MANA)
 +            creature->SetPower(POWER_MANA, scaledCurPower);
 +        else
@@ -1133,10 +1134,10 @@ index 000000000..b4106f5eb
 +
 +#endif
 diff --git a/src/server/game/Entities/Creature/Creature.cpp b/src/server/game/Entities/Creature/Creature.cpp
-index 5f730c9c9..d91b5c438 100644
+index 56cfb3713..6e8e07b15 100644
 --- a/src/server/game/Entities/Creature/Creature.cpp
 +++ b/src/server/game/Entities/Creature/Creature.cpp
-@@ -864,6 +864,8 @@ void Creature::Update(uint32 diff)
+@@ -869,6 +869,8 @@ void Creature::Update(uint32 diff)
          default:
              break;
      }
@@ -1146,7 +1147,7 @@ index 5f730c9c9..d91b5c438 100644
  
  void Creature::Regenerate(Powers power)
 diff --git a/src/server/game/Entities/Creature/Creature.h b/src/server/game/Entities/Creature/Creature.h
-index 8a65ca537..1a258d87c 100644
+index 1c1504d74..e607dfe68 100644
 --- a/src/server/game/Entities/Creature/Creature.h
 +++ b/src/server/game/Entities/Creature/Creature.h
 @@ -28,6 +28,8 @@
@@ -1158,7 +1159,7 @@ index 8a65ca537..1a258d87c 100644
  class CreatureAI;
  class CreatureGroup;
  class Group;
-@@ -327,6 +329,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
+@@ -331,6 +333,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
          void ResetPlayerDamageReq() { m_PlayerDamageReq = GetHealth() / 2; }
          uint32 m_PlayerDamageReq;
  
@@ -1224,7 +1225,7 @@ index 000000000..70ec8aee9
 +
 +#endif
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 94cdf8c31..1444ac625 100644
+index 73c189ea0..3e029c7b3 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
 @@ -6412,6 +6412,10 @@ void Unit::SendHealSpellLog(HealInfo& healInfo, bool critical /*= false*/)
@@ -1239,7 +1240,7 @@ index 94cdf8c31..1444ac625 100644
      Unit::CalcHealAbsorb(healInfo);
      Unit::DealHeal(healInfo);
 diff --git a/src/server/game/Entities/Unit/Unit.h b/src/server/game/Entities/Unit/Unit.h
-index a969ee021..c9327df68 100644
+index 42e94a53e..11e8b4c8c 100644
 --- a/src/server/game/Entities/Unit/Unit.h
 +++ b/src/server/game/Entities/Unit/Unit.h
 @@ -495,6 +495,8 @@ class TC_GAME_API HealInfo
@@ -1252,7 +1253,7 @@ index a969ee021..c9327df68 100644
  
  class TC_GAME_API ProcEventInfo
 diff --git a/src/server/game/Maps/Map.h b/src/server/game/Maps/Map.h
-index 84783d95c..07c2e176f 100644
+index af77c9258..3c2a586f6 100644
 --- a/src/server/game/Maps/Map.h
 +++ b/src/server/game/Maps/Map.h
 @@ -18,6 +18,8 @@
